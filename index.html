@@ -41,11 +41,11 @@
         <div class="row">
             <div class="col-md-6">
                 <h1>Found Keys</h1>
-                <p id="foundKeys" class="text-success"></p>
+                <pre id="foundKeys" class="text-success"></pre>
             </div>
             <div class="col-md-6">
                 <h1>Not Found Keys</h1>
-                <p id="notFoundKeys" class="text-danger"></p>
+                <pre id="notFoundKeys" class="text-danger"></pre>
             </div>
         </div>
     </div>
@@ -69,13 +69,11 @@
 
                         // Check if key contains `{vars}`
                         if (key.includes("{vars{")) {
-                            //matches.push({ path: newPath, type: "key", match: key });
                             matches.push(newPath);
                         }
 
                         // Check if value is a string containing `{vars}`
                         if (typeof value === "string" && value.includes("{vars{")) {
-                            //matches.push({ path: newPath, type: "value", match: value });
                             matches.push(newPath);
                         }
 
@@ -93,30 +91,33 @@
             traverse(obj, path); // Start traversal
             return matches;
         }
-        // Event listener for the search button
+
+        // Event listener for the "Extract Keys" button
         document.getElementById("searchBtn").addEventListener("click", () => {
             const textarea = document.getElementById("jsonInput");
             const resultsDiv = document.getElementById("extract-keys");
             try {
                 // Parse input JSON
                 const jsonData = JSON.parse(textarea.value);
-                // Perform deep search
+                // Perform deep search for keys containing `{vars}`
                 const matches = deepSearchForVars(jsonData);
 
                 // Display results
                 if (matches.length === 0) {
                     resultsDiv.textContent = "No keys or values containing `{vars}` were found.";
                 } else {
-                    resultsDiv.textContent = JSON.stringify(matches, null, 2);
+                    resultsDiv.textContent = matches.join("\n");
                 }
             } catch (error) {
                 resultsDiv.textContent = `Error: Invalid JSON input. ${error.message}`;
             }
         });
+
         // ------------------------
         function deepSearchKeys(obj, keysToSearch) {
             const foundKeys = [];
             const notFoundKeys = [...keysToSearch];
+
             function deepSearch(currentObj, currentPath = "") {
                 if (typeof currentObj !== "object" || currentObj === null) return;
 
@@ -124,10 +125,10 @@
                     const fullPath = currentPath ? `${currentPath}.${key}` : key;
 
                     // Check if the current path matches any of the keys to search
-                    const index = notFoundKeys.indexOf(fullPath);
+                    const index = notFoundKeys.findIndex(searchKey => searchKey === fullPath);
                     if (index !== -1) {
                         foundKeys.push(fullPath);
-                        notFoundKeys.splice(index, 1); // Remove found key from notFoundKeys
+                        notFoundKeys.splice(index, 1); // Remove from notFoundKeys
                     }
 
                     // Recurse into nested objects
@@ -142,7 +143,8 @@
                 notFoundKeys,
             };
         }
-        // -------------
+
+        // Event listener for the "Search" button
         document.getElementById("searchButton").addEventListener("click", () => {
             // Fetch response data from the textarea
             const responseData = document.getElementById("response-data").value;
@@ -156,14 +158,24 @@
 
             // Fetch keys to search from the textarea
             const keysTextarea = document.getElementById("extract-keys").value;
-            const keysToSearch = keysTextarea.split("\n").map(key => key.trim()).filter(key => key !== "");
+
+            // Ensure keys are clean and ready for comparison
+            const keysToSearch = keysTextarea
+                .split("\n")
+                .map(key => key.trim())
+                .filter(key => key !== ""); // Remove empty lines
+
+            if (keysToSearch.length === 0) {
+                alert("No keys to search. Extract keys first!");
+                return;
+            }
 
             // Perform the deep search
             const result = deepSearchKeys(responseObject, keysToSearch);
 
-            // Display results in the UI
-            document.getElementById("foundKeys").textContent = result.foundKeys.join(", ");
-            document.getElementById("notFoundKeys").textContent = result.notFoundKeys.join(", ");
+            // Display results in the UI as arrays (preformatted text)
+            document.getElementById("foundKeys").textContent = JSON.stringify(result.foundKeys, null, 2);
+            document.getElementById("notFoundKeys").textContent = JSON.stringify(result.notFoundKeys, null, 2);
         });
     </script>
 
