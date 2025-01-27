@@ -60,7 +60,6 @@
         // Function to deep search for `{vars{...}}` in keys and values
         function deepSearchForVars(obj, path = "") {
             const matches = [];
-
             // Recursive function to traverse JSON
             function traverse(currentObj, currentPath) {
                 if (typeof currentObj === "object" && currentObj !== null) {
@@ -70,12 +69,12 @@
                         const newPath = currentPath ? `${currentPath}.${key}` : key;
 
                         // Check if key contains `{vars}`
-                        if (key.includes("{vars{")) {
+                        if (key.includes("vars")) {
                             matches.push(newPath);
                         }
 
                         // Check if value is a string containing `{vars}`
-                        if (typeof value === "string" && value.includes("{vars{")) {
+                        if (typeof value === "string" && value.includes("vars")) {
                             matches.push(newPath);
                         }
 
